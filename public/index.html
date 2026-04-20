@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -727,7 +727,6 @@
 <body>
 <div class="app" role="main">
 
-  <!-- ── Header ─────────────────────────────────────────────────────────── -->
   <header>
     <a class="logo" href="/" aria-label="VenueFlow home">
       <div class="logo-icon" aria-hidden="true">🏟️</div>
@@ -742,13 +741,11 @@
     </div>
   </header>
 
-  <!-- ── Alert Banner ───────────────────────────────────────────────────── -->
   <div id="alertBanner" role="alert" aria-live="assertive">
     <span>⚠️</span>
     <span id="alertText"></span>
   </div>
 
-  <!-- ── Mobile quick stats ─────────────────────────────────────────────── -->
   <div class="stats-row" aria-label="Venue quick stats">
     <div class="stat-card">
       <div class="stat-val" id="statAttend">—</div>
@@ -764,20 +761,23 @@
     </div>
   </div>
 
-  <!-- ── Main Layout ────────────────────────────────────────────────────── -->
   <div class="main">
 
-    <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
     <aside class="sidebar" aria-label="Venue status panels">
+      
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">🗺️ Live Map</span>
+        </div>
+        <div id="map" style="height: 220px; width: 100%; background: var(--surface2);"></div>
+      </div>
 
-      <!-- Toggle for mobile -->
       <button class="mobile-toggle" id="sidebarToggle" aria-expanded="false" aria-controls="sidebarContent">
         ▼ SHOW GATE & TRANSIT STATUS
       </button>
 
       <div class="sidebar-content" id="sidebarContent">
 
-        <!-- Gate Status -->
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">🚪 Exit Gates</span>
@@ -788,7 +788,6 @@
           </div>
         </div>
 
-        <!-- Transport -->
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">🚇 Transport</span>
@@ -802,7 +801,6 @@
       </div>
     </aside>
 
-    <!-- ── Chat Panel ────────────────────────────────────────────────────── -->
     <div class="panel chat-panel" role="region" aria-label="AI assistant chat">
       <div class="panel-header">
         <span class="panel-title">🤖 VenueFlow AI Assistant</span>
@@ -842,10 +840,7 @@
       </div>
     </div>
 
-  </div><!-- /.main -->
-</div><!-- /.app -->
-
-<script>
+  </div></div><script>
 // ── State ─────────────────────────────────────────────────────────────────────
 let sessionId = null;
 let isLoading = false;
@@ -1047,6 +1042,26 @@ function askAboutGate(gateName) {
   sendQuick(`Tell me about ${gateName} — is it crowded and what transport is nearby?`);
 }
 
+// ── Google Maps ───────────────────────────────────────────────────────────────
+function initMap() {
+  const venueCoords = { lat: 28.6139, lng: 77.2090 }; 
+  const map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 15,
+    center: venueCoords,
+    disableDefaultUI: true,
+    styles: [
+      { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+      { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
+    ]
+  });
+
+  new google.maps.Marker({ position: { lat: 28.6145, lng: 77.2080 }, map, title: "North Gate 1" });
+  new google.maps.Marker({ position: { lat: 28.6130, lng: 77.2100 }, map, title: "South Gate 5" });
+}
+window.initMap = initMap;
+
 // ── Events ────────────────────────────────────────────────────────────────────
 sendBtn.addEventListener('click', () => {
   sendMessage(chatInput.value);
@@ -1084,5 +1099,6 @@ fetchVenueData();
 setInterval(fetchVenueData, 30_000); // auto-refresh every 30s
 chatInput.focus();
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDv6e7kach3VJGIm9n61sIM-cXwc-k5JHE&callback=initMap" async defer></script>
 </body>
 </html>
