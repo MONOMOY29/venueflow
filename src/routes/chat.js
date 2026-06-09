@@ -101,15 +101,11 @@ router.post("/", async (req, res, next) => {
     const chat = model.startChat({ history: session.history });
     const result = await chat.sendMessage(trimmed);
 
-    // result.response.text() throws when the answer was blocked or empty,
-    // so guard against it and surface a friendly message instead of a 500.
-    let responseText = "";
-    try {
-      responseText = result.response.text();
-    } catch {
-      responseText = "";
-    }
-    if (!responseText.trim()) {
+    // If text() throws (e.g. safety-blocked), let it propagate to the
+    // centralised error handler, which maps SAFETY/quota/etc. to the right
+    // status and message. Only handle the case where it returns empty text.
+    const responseText = result.response.text();
+    if (!responseText || !responseText.trim()) {
       return res.status(502).json({
         error:
           "AI did not return a response. Please rephrase your question and try again.",
