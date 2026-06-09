@@ -20,26 +20,15 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "https://maps.googleapis.com",
-          "https://maps.gstatic.com",
-        ],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: [
           "'self'",
           "'unsafe-inline'",
           "https://fonts.googleapis.com",
         ],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: [
-          "'self'",
-          "data:",
-          "https://maps.googleapis.com",
-          "https://maps.gstatic.com",
-          "https://*.ggpht.com",
-        ],
-        connectSrc: ["'self'", "https://maps.googleapis.com"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
         frameSrc: ["'none'"],
       },
     },
