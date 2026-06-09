@@ -765,12 +765,6 @@
 
     <aside class="sidebar" aria-label="Venue status panels">
       
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">🗺️ Live Map</span>
-        </div>
-        <div id="map" style="height: 220px; width: 100%; background: var(--surface2);"></div>
-      </div>
 
       <button class="mobile-toggle" id="sidebarToggle" aria-expanded="false" aria-controls="sidebarContent">
         ▼ SHOW GATE & TRANSIT STATUS
@@ -1042,25 +1036,6 @@ function askAboutGate(gateName) {
   sendQuick(`Tell me about ${gateName} — is it crowded and what transport is nearby?`);
 }
 
-// ── Google Maps ───────────────────────────────────────────────────────────────
-function initMap() {
-  const venueCoords = { lat: 28.6139, lng: 77.2090 }; 
-  const map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 15,
-    center: venueCoords,
-    disableDefaultUI: true,
-    styles: [
-      { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-      { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-      { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-      { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
-    ]
-  });
-
-  new google.maps.Marker({ position: { lat: 28.6145, lng: 77.2080 }, map, title: "North Gate 1" });
-  new google.maps.Marker({ position: { lat: 28.6130, lng: 77.2100 }, map, title: "South Gate 5" });
-}
-window.initMap = initMap;
 
 // ── Events ────────────────────────────────────────────────────────────────────
 sendBtn.addEventListener('click', () => {
@@ -1099,6 +1074,5 @@ fetchVenueData();
 setInterval(fetchVenueData, 30_000); // auto-refresh every 30s
 chatInput.focus();
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDv6e7kach3VJGIm9n61sIM-cXwc-k5JHE&callback=initMap" async defer></script>
 </body>
 </html>

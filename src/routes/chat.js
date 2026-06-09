@@ -48,7 +48,9 @@ function pruneExpiredSessions() {
     }
   }
 }
-setInterval(pruneExpiredSessions, 5 * 60 * 1000);
+// unref() so this background timer never keeps the process (or Jest) alive
+const pruneTimer = setInterval(pruneExpiredSessions, 5 * 60 * 1000);
+if (typeof pruneTimer.unref === "function") pruneTimer.unref();
 
 // ── POST /api/chat ─────────────────────────────────────────────────────────────
 router.post("/", async (req, res, next) => {
@@ -81,7 +83,7 @@ router.post("/", async (req, res, next) => {
 
     // Build Gemini model & chat
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: {
         maxOutputTokens: 512,
@@ -98,7 +100,17 @@ router.post("/", async (req, res, next) => {
 
     const chat = model.startChat({ history: session.history });
     const result = await chat.sendMessage(trimmed);
+
+    // If text() throws (e.g. safety-blocked), let it propagate to the
+    // centralised error handler, which maps SAFETY/quota/etc. to the right
+    // status and message. Only handle the case where it returns empty text.
     const responseText = result.response.text();
+    if (!responseText || !responseText.trim()) {
+      return res.status(502).json({
+        error:
+          "AI did not return a response. Please rephrase your question and try again.",
+      });
+    }
 
     // Persist history (Gemini format)
     session.history.push(
