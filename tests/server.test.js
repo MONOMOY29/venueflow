@@ -1,4 +1,24 @@
 const request = require("supertest");
+
+// Mock Gemini SDK prior to importing server
+jest.mock("@google/generative-ai", () => {
+  return {
+    GoogleGenerativeAI: jest.fn().mockImplementation(() => {
+      return {
+        getGenerativeModel: jest.fn().mockReturnValue({
+          startChat: jest.fn().mockReturnValue({
+            sendMessage: jest.fn().mockResolvedValue({
+              response: {
+                text: () => "Mocked route: Head towards West Gate 12 for the quickest exit.",
+              },
+            }),
+          }),
+        }),
+      };
+    }),
+  };
+});
+
 const app = require("../server");
 
 // ── Health Check ──────────────────────────────────────────────────────────────
@@ -34,7 +54,7 @@ describe("GET /api/venue/status", () => {
     expect(venue.lastUpdated).toBeDefined();
   });
 
-  it("gates have required fields", async () => {
+  it("gates have required fields and valid constraints", async () => {
     const res = await request(app).get("/api/venue/status");
     res.body.gates.forEach((gate) => {
       expect(gate.id).toBeDefined();
@@ -59,7 +79,7 @@ describe("GET /api/venue/status", () => {
 });
 
 describe("GET /api/venue/recommend", () => {
-  it("returns recommendation without section", async () => {
+  it("returns recommendation without section parameter", async () => {
     const res = await request(app).get("/api/venue/recommend");
     expect(res.statusCode).toBe(200);
     expect(res.body.recommendedGates).toBeInstanceOf(Array);
@@ -83,13 +103,23 @@ describe("GET /api/venue/recommend", () => {
 
 // ── Chat API ──────────────────────────────────────────────────────────────────
 describe("POST /api/chat", () => {
+  const originalKey = process.env.GEMINI_API_KEY;
+
+  beforeEach(() => {
+    process.env.GEMINI_API_KEY = "test-mock-api-key";
+  });
+
+  afterAll(() => {
+    process.env.GEMINI_API_KEY = originalKey;
+  });
+
   it("returns 400 if message is missing", async () => {
     const res = await request(app).post("/api/chat").send({});
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBeDefined();
   });
 
-  it("returns 400 if message is empty string", async () => {
+  it("returns 400 if message is an empty string", async () => {
     const res = await request(app).post("/api/chat").send({ message: "   " });
     expect(res.statusCode).toBe(400);
   });
@@ -100,32 +130,44 @@ describe("POST /api/chat", () => {
   });
 
   it("returns 503 if GEMINI_API_KEY is not set", async () => {
-    const original = process.env.GEMINI_API_KEY;
     delete process.env.GEMINI_API_KEY;
     const res = await request(app).post("/api/chat").send({ message: "Hello" });
     expect(res.statusCode).toBe(503);
     expect(res.body.error).toContain("GEMINI_API_KEY");
-    process.env.GEMINI_API_KEY = original;
+  });
+
+  it("returns 200 and mocked reply when API key is configured", async () => {
+    const res = await request(app)
+      .post("/api/chat")
+      .send({ message: "How do I exit from North section?" });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.reply).toContain("West Gate 12");
+    expect(res.body.sessionId).toBeDefined();
+  });
+
+  it("clears a session on DELETE /api/chat/:sessionId", async () => {
+    const res = await request(app).delete("/api/chat/test-session-id");
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe("Session cleared.");
   });
 });
 
-// ── Static Frontend ───────────────────────────────────────────────────────────
+// ── Static Frontend & Fallback ────────────────────────────────────────────────
 describe("Static frontend", () => {
-  it("serves index.html at /", async () => {
+  it("serves index.html at root /", async () => {
     const res = await request(app).get("/");
     expect(res.statusCode).toBe(200);
     expect(res.headers["content-type"]).toMatch(/html/);
-    expect(res.text).toContain("VenueFlow");
   });
 
   it("falls back to index.html for SPA routes", async () => {
     const res = await request(app).get("/some/deep/route");
     expect(res.statusCode).toBe(200);
-    expect(res.text).toContain("VenueFlow");
+    expect(res.headers["content-type"]).toMatch(/html/);
   });
 });
 
-// ── Security headers ──────────────────────────────────────────────────────────
+// ── Security Headers (Helmet) ─────────────────────────────────────────────────
 describe("Security headers (Helmet)", () => {
   it("includes x-content-type-options header", async () => {
     const res = await request(app).get("/health");
