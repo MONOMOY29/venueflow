@@ -1,4 +1,7 @@
 # 🏟️ VenueFlow — AI Smart Venue Navigator
+## Build note
+Built with AI-assisted development (live-coded with AI tools).
+My role: solo 
 
 > **Real-time crowd intelligence, dynamic exit dispatching, and multimodal venue navigation for high-capacity stadiums and arenas.**
 
